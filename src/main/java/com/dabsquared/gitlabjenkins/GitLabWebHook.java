@@ -125,7 +125,7 @@ public class GitLabWebHook implements UnprotectedRootAction {
                 index = paths.lastIndexOf("builds");
             if (index == -1)
                 index = paths.lastIndexOf("!builds");
-            
+
             if (index > 1) {
                 sourceBranch = Joiner.on('/').join(paths.subList(1, index)); // extract branch
                 paths.subList(0, index).clear(); // remove 'refs/<branchName>'
@@ -152,7 +152,7 @@ public class GitLabWebHook implements UnprotectedRootAction {
         		Run build = this.getBuildByBranch(project, req.getParameter("ref"));
         		redirectToBuildPage(res, build);
         	} else {
-        		this.generateBuild(theString, project, req, res);           
+        		this.generateBuild(theString, project, req, res);
         	}
         	throw HttpResponses.ok();
         }
@@ -248,7 +248,7 @@ public class GitLabWebHook implements UnprotectedRootAction {
         }else {
             object.put("status", "failed");
         }
-        
+
         try {
             this.writeJSON(rsp, object);
         } catch (IOException e) {
@@ -290,9 +290,9 @@ public class GitLabWebHook implements UnprotectedRootAction {
             }else if(res == Result.UNSTABLE) {
             	imageUrl = "images/unstable.png";
             }else {
-            	imageUrl = "images/unknown.png"; 
+            	imageUrl = "images/unknown.png";
             }
-        }       
+        }
         Authentication old = SecurityContextHolder.getContext().getAuthentication();
         SecurityContextHolder.getContext().setAuthentication(ACL.SYSTEM);
         try {
@@ -395,18 +395,25 @@ public class GitLabWebHook implements UnprotectedRootAction {
 
 	protected void buildOpenMergeRequests(GitLabPushTrigger trigger, Integer projectId, String projectRef) {
 		try {
+            LOGGER.log(Level.FINE, "Getting Gitlab Instance");
 			GitLab api = trigger.getGitlab();
+            LOGGER.log(Level.FINE, "Listing Merge requests");
 			List<GitlabMergeRequest> mergeRequests = api.instance().getOpenMergeRequests(projectId);
 
 			for (org.gitlab.api.models.GitlabMergeRequest mr : mergeRequests) {
-				if (projectRef.endsWith(mr.getSourceBranch()) || 
-                                        (trigger.getTriggerOpenMergeRequestOnPush().equals("both") && projectRef.endsWith(mr.getTargetBranch()))) {
-                                    
-                                        if (trigger.getCiSkip() && mr.getDescription().contains("[ci-skip]")) {
-                                            LOGGER.log(Level.INFO, "Skipping MR " + mr.getTitle() + " due to ci-skip.");
-                                            continue;
-                                        }
+                LOGGER.log(Level.FINE, "Determining if MR " + mr.getTitle() + " Should be built");
+				if (projectRef.endsWith(mr.getSourceBranch()) ||
+                        (trigger.getTriggerOpenMergeRequestOnPush().equals("both") && projectRef.endsWith(mr.getTargetBranch()))) {
+                    LOGGER.log(Level.FINE, "Building MR " + mr.getTitle());
+
+                    if (trigger.getCiSkip() && mr.getDescription().contains("[ci-skip]")) {
+                        LOGGER.log(Level.INFO, "Skipping MR " + mr.getTitle() + " due to ci-skip.");
+                        continue;
+                    }
+                    LOGGER.log(Level.FINE, "Fetching latest commit");
 					GitlabBranch branch = api.instance().getBranch(api.instance().getProject(projectId), mr.getSourceBranch());
+                    LOGGER.log(Level.FINE, "Building Lastcommit width URL : "+GitlabProject.URL + "/" + projectId + "/repository" + GitlabCommit.URL + "/"
+                            + branch.getCommit().getId());
                     LastCommit lastCommit = new LastCommit();
                     lastCommit.setId(branch.getCommit().getId());
                     lastCommit.setMessage(branch.getCommit().getMessage());
@@ -419,7 +426,6 @@ public class GitLabWebHook implements UnprotectedRootAction {
 									+ mr.getSourceBranch() + "\n target: "
 									+ mr.getTargetBranch() + "\n state: "
 									+ mr.getState() + "\n assign: "
-									+ mr.getAssignee().getName() + "\n author: "
 									+ mr.getAuthor().getName() + "\n id: "
 									+ mr.getId() + "\n iid: "
                                     + mr.getIid() + "\n last commit: "
@@ -445,6 +451,7 @@ public class GitLabWebHook implements UnprotectedRootAction {
 					Authentication old = SecurityContextHolder.getContext().getAuthentication();
 					SecurityContextHolder.getContext().setAuthentication(ACL.SYSTEM);
 					try {
+                        LOGGER.log(Level.FINE, "Triggering new Post");
 						trigger.onPost(newReq);
 					} finally {
 						SecurityContextHolder.getContext().setAuthentication(old);
@@ -504,12 +511,12 @@ public class GitLabWebHook implements UnprotectedRootAction {
             if (trigger == null) {
                 return;
             }
-            
+
             if(trigger.getCiSkip() && request.getObjectAttribute().getDescription().contains("[ci-skip]")) {
                 LOGGER.log(Level.INFO, "Skipping MR " + request.getObjectAttribute().getTitle() + " due to ci-skip.");
                 return;
             }
-            
+
             trigger.onPost(request);
         } finally {
             SecurityContextHolder.getContext().setAuthentication(old);
@@ -590,7 +597,7 @@ public class GitLabWebHook implements UnprotectedRootAction {
 			return false;
 		}
 	}
-    
+
     /**
      *
      * @param project

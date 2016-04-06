@@ -270,8 +270,12 @@ public class GitLabPushTrigger extends Trigger<Job<?, ?>> {
                     values.put("gitlabBranch", new StringParameterValue("gitlabBranch", branch));
 
                     values.put("gitlabActionType", new StringParameterValue("gitlabActionType", "PUSH"));
-                    values.put("gitlabUserName", new StringParameterValue("gitlabUserName", req.getCommits().get(0).getAuthor().getName()));
-                    values.put("gitlabUserEmail", new StringParameterValue("gitlabUserEmail", req.getCommits().get(0).getAuthor().getEmail()));
+                    if (req.getCommits().get(0).getAuthor() != null
+                        && req.getCommits().get(0).getAuthor().getName() != null
+                        && req.getCommits().get(0).getAuthor().getEmail() != null) {
+                        values.put("gitlabUserName", new StringParameterValue("gitlabUserName", req.getCommits().get(0).getAuthor().getName()));
+                        values.put("gitlabUserEmail", new StringParameterValue("gitlabUserEmail", req.getCommits().get(0).getAuthor().getEmail()));
+                    }
                     values.put("gitlabMergeRequestTitle", new StringParameterValue("gitlabMergeRequestTitle", ""));
                     values.put("gitlabMergeRequestId", new StringParameterValue("gitlabMergeRequestId", ""));
                     values.put("gitlabMergeRequestAssignee", new StringParameterValue("gitlabMergeRequestAssignee", ""));
@@ -395,7 +399,9 @@ public class GitLabPushTrigger extends Trigger<Job<?, ?>> {
                     values.put("gitlabSourceBranch", new StringParameterValue("gitlabSourceBranch", getSourceBranch(req)));
                     values.put("gitlabTargetBranch", new StringParameterValue("gitlabTargetBranch", req.getObjectAttribute().getTargetBranch()));
                     values.put("gitlabActionType", new StringParameterValue("gitlabActionType", "MERGE"));
-                    if (req.getObjectAttribute().getAuthor() != null) {
+                    if (req.getObjectAttribute().getAuthor() != null
+                        && req.getObjectAttribute().getAuthor().getName() != null
+                        && req.getObjectAttribute().getAuthor().getEmail() != null) {
                         values.put("gitlabUserName", new StringParameterValue("gitlabUserName", req.getObjectAttribute().getAuthor().getName()));
                         values.put("gitlabUserEmail", new StringParameterValue("gitlabUserEmail", req.getObjectAttribute().getAuthor().getEmail()));
                     }
